@@ -1,0 +1,214 @@
+--[[
+    ========================================================
+             BANANA HUB - MULTI-LANGUAGE LOADER
+    ========================================================
+]]
+
+local Services = {
+    Tween = game:GetService("TweenService"),
+    Core = game:GetService("CoreGui"),
+    Players = game:GetService("Players")
+}
+
+-- 1. DỮ LIỆU NGÔN NGỮ (VIỆT / ANH)
+local LANGUAGES = {
+    VI = {
+        CheckingGame = "Đang kiểm tra Game ID...",
+        NotSupported = "❌ Trò chơi không nằm trong danh sách hỗ trợ!",
+        Downloading = "Đang tải dữ liệu...",
+        Success = "✅ Tải thành công! Đang kích hoạt...",
+        Failed = "❌ Lỗi kết nối! Không thể tải Script.",
+        SettingTitle = "CÀI ĐẶT NGÔN NGỮ",
+        LangOption = "Ngôn ngữ / Language:"
+    },
+    EN = {
+        CheckingGame = "Checking Game ID...",
+        NotSupported = "❌ Game currently not supported!",
+        Downloading = "Downloading script data...",
+        Success = "✅ Loaded successfully! Activating...",
+        Failed = "❌ Connection error! Failed to load.",
+        SettingTitle = "LANGUAGE SETTINGS",
+        LangOption = "Language / Ngôn ngữ:"
+    }
+}
+
+local currentLang = "VI" -- Ngôn ngữ mặc định: Tiếng Việt
+
+-- 2. BẢNG DỮ LIỆU GAME (GIỮ 100% LINK GỐC)
+local GAME_MAP = {
+    ByGame = {
+        [10563114921] = "https://raw.githubusercontent.com/tienkhanh1/Chilli-Hub-Script/refs/heads/main/StealAnEggg",
+        [10035204815] = "https://api.luarmor.net/files/v4/loaders/0dbcaa9e992477523d38a8284d7dbdef.lua",
+        [10690360998] = "https://raw.githubusercontent.com/tienkhanh1/Chilli-Hub-Script/refs/heads/main/JumpForAnimals",
+        [7709344486]  = "https://raw.githubusercontent.com/tienkhanh1/spicy/refs/heads/main/Steal-a-Brainrot",
+        [66654135]   = "https://api.luarmor.net/files/v4/loaders/2bf348894416e1d3deee40be756d42ff.lua",
+        [1686885941] = "https://api.luarmor.net/files/v4/loaders/89190a03fd337349cef140d576357ba3.lua",
+    },
+    ByPlace = {
+        [107778070777162] = "https://raw.githubusercontent.com/tienkhanh1/Chilli-Hub-Script/refs/heads/main/StealAnEggg",
+        [124216119978534] = "https://api.luarmor.net/files/v4/loaders/0dbcaa9e992477523d38a8284d7dbdef.lua",
+        [126870639873289] = "https://raw.githubusercontent.com/tienkhanh1/Chilli-Hub-Script/refs/heads/main/JumpForAnimals",
+        [109983668079237] = "https://raw.githubusercontent.com/tienkhanh1/spicy/refs/heads/main/Steal-a-Brainrot",
+        [142823291]       = "https://api.luarmor.net/files/v4/loaders/2bf348894416e1d3deee40be756d42ff.lua",
+        [4924922222]      = "https://api.luarmor.net/files/v4/loaders/89190a03fd337349cef140d576357ba3.lua",
+    }
+}
+
+-- 3. TẠO MENU LOADER + GIAO DIỆN CÀI ĐẶT
+local function BuildBananaUI()
+    local Gui = Instance.new("ScreenGui")
+    Gui.Name = "BananaHub_UI"
+    Gui.ResetOnSpawn = false
+
+    local successParent = pcall(function()
+        Gui.Parent = Services.Core
+    end)
+    if not successParent or not Gui.Parent then
+        Gui.Parent = Services.Players.LocalPlayer:WaitForChild("PlayerGui")
+    end
+
+    -- Khung Menu Chính (480x140px)
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(0, 480, 0, 140)
+    Frame.Position = UDim2.new(0.5, -240, 1, 50)
+    Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 15)
+    Frame.BorderSizePixel = 0
+    Frame.ClipsDescendants = true
+    Frame.Parent = Gui
+
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 16)
+    UICorner.Parent = Frame
+
+    local UIStroke = Instance.new("UIStroke")
+    UIStroke.Color = Color3.fromRGB(255, 215, 0)
+    UIStroke.Thickness = 3
+    UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    UIStroke.Parent = Frame
+
+    -- Icon Trái Chuối
+    local Icon = Instance.new("TextLabel")
+    Icon.Size = UDim2.new(0, 60, 0, 60)
+    Icon.Position = UDim2.new(0, 15, 0, 15)
+    Icon.BackgroundTransparency = 1
+    Icon.Text = "🍌"
+    Icon.TextSize = 45
+    Icon.Parent = Frame
+
+    -- Tiêu đề
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(1, -140, 0, 35)
+    Title.Position = UDim2.new(0, 80, 0, 12)
+    Title.BackgroundTransparency = 1
+    Title.Text = "BANANA HUB"
+    Title.TextColor3 = Color3.fromRGB(255, 220, 30)
+    Title.TextSize = 25
+    Title.Font = Enum.Font.FredokaOne
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Parent = Frame
+
+    -- Dòng Trạng Thái
+    local Status = Instance.new("TextLabel")
+    Status.Size = UDim2.new(1, -140, 0, 25)
+    Status.Position = UDim2.new(0, 80, 0, 47)
+    Status.BackgroundTransparency = 1
+    Status.Text = LANGUAGES[currentLang].CheckingGame
+    Status.TextColor3 = Color3.fromRGB(240, 240, 200)
+    Status.TextSize = 15
+    Status.Font = Enum.Font.GothamMedium
+    Status.TextXAlignment = Enum.TextXAlignment.Left
+    Status.Parent = Frame
+
+    -- Nút Cài Đặt (⚙️)
+    local SettingBtn = Instance.new("TextButton")
+    SettingBtn.Size = UDim2.new(0, 36, 0, 36)
+    SettingBtn.Position = UDim2.new(1, -48, 0, 15)
+    SettingBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 25)
+    SettingBtn.Text = "⚙️"
+    SettingBtn.TextSize = 20
+    SettingBtn.AutoButtonColor = true
+    SettingBtn.Parent = Frame
+
+    local BtnCorner = Instance.new("UICorner")
+    BtnCorner.CornerRadius = UDim.new(0, 8)
+    BtnCorner.Parent = SettingBtn
+
+    -- Thanh Loading Bar
+    local BarBG = Instance.new("Frame")
+    BarBG.Size = UDim2.new(1, -30, 0, 8)
+    BarBG.Position = UDim2.new(0, 15, 0, 105)
+    BarBG.BackgroundColor3 = Color3.fromRGB(40, 40, 30)
+    BarBG.BorderSizePixel = 0
+    BarBG.Parent = Frame
+
+    local BarBGCorner = Instance.new("UICorner")
+    BarBGCorner.CornerRadius = UDim.new(1, 0)
+    BarBGCorner.Parent = BarBG
+
+    local BarFill = Instance.new("Frame")
+    BarFill.Size = UDim2.new(0.1, 0, 1, 0)
+    BarFill.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+    BarFill.BorderSizePixel = 0
+    BarFill.Parent = BarBG
+
+    local BarFillCorner = Instance.new("UICorner")
+    BarFillCorner.CornerRadius = UDim.new(1, 0)
+    BarFillCorner.Parent = BarFill
+
+    -- KHUNG BẢNG CÀI ĐẶT (SETTING PANEL OVERLAY)
+    local SettingPanel = Instance.new("Frame")
+    SettingPanel.Size = UDim2.new(1, 0, 1, 0)
+    SettingPanel.Position = UDim2.new(0, 0, 1, 0) -- Ẩn ở dưới
+    SettingPanel.BackgroundColor3 = Color3.fromRGB(15, 15, 10)
+    SettingPanel.BorderSizePixel = 0
+    SettingPanel.ZIndex = 5
+    SettingPanel.Parent = Frame
+
+    local SettingTitle = Instance.new("TextLabel")
+    SettingTitle.Size = UDim2.new(1, -50, 0, 30)
+    SettingTitle.Position = UDim2.new(0, 15, 0, 10)
+    SettingTitle.BackgroundTransparency = 1
+    SettingTitle.Text = LANGUAGES[currentLang].SettingTitle
+    SettingTitle.TextColor3 = Color3.fromRGB(255, 215, 0)
+    SettingTitle.TextSize = 16
+    SettingTitle.Font = Enum.Font.GothamBold
+    SettingTitle.TextXAlignment = Enum.TextXAlignment.Left
+    SettingTitle.ZIndex = 6
+    SettingTitle.Parent = SettingPanel
+
+    -- Nút Đóng Setting (✖)
+    local CloseSettingBtn = Instance.new("TextButton")
+    CloseSettingBtn.Size = UDim2.new(0, 30, 0, 30)
+    CloseSettingBtn.Position = UDim2.new(1, -40, 0, 10)
+    CloseSettingBtn.BackgroundTransparency = 1
+    CloseSettingBtn.Text = "✖"
+    CloseSettingBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    CloseSettingBtn.TextSize = 18
+    CloseSettingBtn.ZIndex = 6
+    CloseSettingBtn.Parent = SettingPanel
+
+    -- Nút Chuyển Ngôn Ngữ (VI / EN)
+    local LangToggleBtn = Instance.new("TextButton")
+    LangToggleBtn.Size = UDim2.new(0, 200, 0, 45)
+    LangToggleBtn.Position = UDim2.new(0.5, -100, 0, 60)
+    LangToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+    LangToggleBtn.Text = "🇻🇳 Tiếng Việt"
+    LangToggleBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+    LangToggleBtn.TextSize = 16
+    LangToggleBtn.Font = Enum.Font.GothamBold
+    LangToggleBtn.ZIndex = 6
+    LangToggleBtn.Parent = SettingPanel
+
+    local LangCorner = Instance.new("UICorner")
+    LangCorner.CornerRadius = UDim.new(0, 10)
+    LangCorner.Parent = LangToggleBtn
+
+    -- BẬT / TẮT BẢNG SETTING
+    local isSettingOpen = false
+    local lastStatusKey = "CheckingGame"
+    local lastAttemptText = ""
+
+    local function ToggleSetting()
+        isSettingOpen = not isSettingOpen
+        Services.Tween:Create(SettingPanel, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            Position = isSettingOpen and UDim2.new(0, 
